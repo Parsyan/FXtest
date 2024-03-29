@@ -1,14 +1,17 @@
 package com.fx.model3dfxtest.GuideCodes.controls;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
+import com.fx.model3dfxtest.GuideCodes.Tabs.DeleteGroup;
+import com.fx.model3dfxtest.GuideCodes.Tabs.MergeGroup;
 import javafx.scene.Group;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
+import lombok.Getter;
+
 
 public class SmartGroup extends Group {
 
@@ -19,6 +22,7 @@ public class SmartGroup extends Group {
     private double initialScaleY;
     private double initialScaleZ;
 // rotating
+        @Getter
         private Rotate r;
         private Transform t = new Rotate();
 // mouse rotating
@@ -28,35 +32,81 @@ public class SmartGroup extends Group {
     private Rotate rotateY;
 
 //
-
+    private Box box;
+    private Cylinder cylinder;
+    private Sphere sphere;
     private double currentX;
     private double currentY;
     private double currentZ;
     private boolean X_AXIS_MODE = false;
     private boolean Y_AXIS_MODE = false;
     private boolean Z_AXIS_MODE = false;
+//
 
+        public SmartGroup(Box box) {
+            this.box = box;
+            this.getChildren().add(box);
+            setMouseClicked();
+        }
+        public SmartGroup(Sphere sphere) {
+            this.sphere = sphere;
+            this.getChildren().add(sphere);
 
-        public SmartGroup() {
-
-            this.setOnMouseClicked(mouseEvent -> {
-
-                if(mouseEvent.getButton().equals(MouseButton.PRIMARY)){
-                    initMoveMouseControl();
-
-
-                    if (mouseEvent.getClickCount() == 3) {
-                        initStretchMouseControl();
-                    }
-                    if (mouseEvent.getClickCount() == 2) {
-                        initRotateMouseControl();
-                    }
-
-                }
-
-            });
+            setMouseClicked();
         }
 
+        public SmartGroup(Cylinder cylinder) {
+            this.cylinder = cylinder;
+            this.getChildren().add(cylinder);
+
+            setMouseClicked();
+        }
+        public SmartGroup() {
+            setMouseClicked();
+        }
+
+        public SmartGroup(Group root3D) {
+            this.getChildren().add(root3D);
+            setMouseClicked();
+        }
+
+        protected void setMouseClicked() {
+                logging();
+                this.setOnMouseClicked(mouseEvent -> {
+
+                    if(mouseEvent.getButton().equals(MouseButton.PRIMARY)){
+                        initMoveMouseControl();
+
+                        if(DeleteGroup.isActivated){
+                            DeleteGroup.delete((Group) this.getParent(), this);
+                        }
+                        if (MergeGroup.isActivated){
+                            MergeGroup.createMergeGroup(this.toGroup());
+                        }
+
+                        if (mouseEvent.getClickCount() == 3) {
+                            initStretchMouseControl();
+                        }
+                        if (mouseEvent.getClickCount() == 2) {
+                            initRotateMouseControl();
+                        }
+                    }
+                });
+            }
+
+        private void logging(){
+            System.out.print("X: " + currentX + ", Y: " + currentY + ", Z: " + currentZ + ", Scale X : " + this.getScaleX() + ", Scale Y : " + this.getScaleY() + ", Scale Z : " + this.getScaleZ() + ", Rotate : " + this.getRotate());
+            if(box != null){
+                System.out.print(" Box Width : " + box.getWidth() + ", Height : " + box.getHeight() + ", Depth : " + box.getDepth());
+            }
+            if(sphere != null){
+                System.out.print(" Sphere Radius : " + sphere.getRadius() + ", Divisions : " + sphere.getDivisions());
+            }
+            if(cylinder != null){
+                System.out.print(" Cylinder Radius : " + cylinder.getRadius() + ", Divisions : " + cylinder.getDivisions() + ", Height : " + cylinder.getHeight());
+            }
+            System.out.println();
+        }
 
 
 
@@ -75,21 +125,11 @@ public class SmartGroup extends Group {
             this.getTransforms().addAll(t);
         }
 
-        public void initDelete(){
-            this.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
-                switch (event.getCode()) {
-                    case DELETE:
-                        this.getChildren().clear();
-
-                }
-            });
-        }
 
         public void initRotateMouseControl() {
-//            this.getTransforms().clear();
             this.getTransforms().addAll(
-                    rotateX = new Rotate(0, Rotate.X_AXIS),
-                    rotateY = new Rotate(0, Rotate.Y_AXIS)
+                    rotateX = new Rotate(5, Rotate.X_AXIS),
+                    rotateY = new Rotate(5, Rotate.Y_AXIS)
             );
 
             this.setOnMousePressed(mouseEvent -> {
@@ -100,7 +140,6 @@ public class SmartGroup extends Group {
                 }
 
             });
-
             this.setOnMouseDragged(mouseEvent -> {
                 if (mouseEvent.getButton().equals(MouseButton.PRIMARY)){
                     double deltaX = mouseEvent.getSceneX() - previousMouseX;
@@ -115,8 +154,6 @@ public class SmartGroup extends Group {
                 }
 
             });
-
-
         }
         public void initStretchMouseControl() {
             this.setOnMousePressed(mouseEvent -> {
@@ -210,8 +247,12 @@ public class SmartGroup extends Group {
 
             });
         }
-
-    public Rotate getR() {
-            return r;
+        public Group toGroup(){
+            Group group = new Group();
+            for (Node gr : this.getChildren()) {
+                    group.getChildren().add(gr);
+            }
+            group.getChildren().addAll(this.getChildren());
+            return group;
         }
 }
