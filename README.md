@@ -1,2 +1,2 @@
-1. Download and install Java and JDK
+1. Download and install Java 
 2. 
